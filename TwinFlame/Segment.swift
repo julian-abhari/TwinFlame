@@ -25,7 +25,7 @@ class Segment {
         // Create the visual node
         self.node = SKShapeNode()
         self.node.strokeColor = SKColor(white: 1.0, alpha: CGFloat(segmentNumber) / 255.0)
-        self.node.lineWidth = length
+        self.node.lineWidth = length + 1
         updateNodePath()
     }
 

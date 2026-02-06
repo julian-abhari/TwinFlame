@@ -36,9 +36,23 @@ class GameScene: SKScene {
         // Set background color to black
         backgroundColor = .black
 
-        // Setup heart shapes
-        outerHeartPoints = setupHeart(radius: 20)
-        innerHeartPoints = setupHeart(radius: 8)
+        // Define horizontal padding so the heart doesn't press against screen edges
+        let horizontalPadding: CGFloat = 24  // adjust to taste
+
+        // Compute available width with padding and choose scale based on the smaller dimension
+        let availableWidth = max(0, view.frame.width - 2 * horizontalPadding)
+        let availableHeight = view.frame.height
+
+        // The original heart was designed for a reference dimension of around 400-500 points.
+        // We'll use 450 as a baseline.
+        let referenceDimension: CGFloat = 450
+
+        // Use the smaller of availableWidth and availableHeight to keep the heart fully visible.
+        let scaleFactor = min(availableWidth, availableHeight) / referenceDimension
+
+        // Setup heart shapes with scaled radius
+        outerHeartPoints = setupHeart(radius: 20 * scaleFactor)
+        innerHeartPoints = setupHeart(radius: 8 * scaleFactor)
 
         // Create vehicles
         setupVehicles()
@@ -72,12 +86,16 @@ class GameScene: SKScene {
         while angle < maxAngle {
             // Create vehicles at random positions
             let v1 = Vehicle(
-                x: CGFloat.random(in: -halfWidth...halfWidth),
-                y: CGFloat.random(in: -halfHeight...halfHeight)
+                 x: CGFloat.random(in: -halfWidth...halfWidth),
+                 y: CGFloat.random(in: -halfHeight...halfHeight)
+//                x: innerHeartPoints[Int(angle / radiusIncrement)].x,
+//                y: innerHeartPoints[Int(angle / radiusIncrement)].y
             )
             let v2 = Vehicle(
-                x: CGFloat.random(in: -halfWidth...halfWidth),
-                y: CGFloat.random(in: -halfHeight...halfHeight)
+                 x: CGFloat.random(in: -halfWidth...halfWidth),
+                 y: CGFloat.random(in: -halfHeight...halfHeight)
+//                x: outerHeartPoints[Int(angle / radiusIncrement)].x,
+//                y: outerHeartPoints[Int(angle / radiusIncrement)].y
             )
 
             vehicles1.append(v1)
@@ -98,7 +116,7 @@ class GameScene: SKScene {
             let lace = Lace(
                 x: vehicles2[i].position.x,
                 y: vehicles2[i].position.y,
-                pixelLength: distance + 20
+                pixelLength: distance + 40
             )
             laceNet.append(lace)
 
