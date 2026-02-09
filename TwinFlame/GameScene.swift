@@ -32,6 +32,9 @@ class GameScene: SKScene {
     // Touch location for flee behavior
     private var touchLocation: CGPoint?
 
+    // Sparkle button
+    private var sparkleButton: SparkleButtonNode?
+
     override func didMove(to view: SKView) {
         // Set background color to black
         backgroundColor = .black
@@ -44,8 +47,7 @@ class GameScene: SKScene {
         let availableHeight = view.frame.height
 
         // The original heart was designed for a reference dimension of around 400-500 points.
-        // We'll use 450 as a baseline.
-        let referenceDimension: CGFloat = 450
+        let referenceDimension: CGFloat = 430
 
         // Use the smaller of availableWidth and availableHeight to keep the heart fully visible.
         let scaleFactor = min(availableWidth, availableHeight) / referenceDimension
@@ -59,6 +61,9 @@ class GameScene: SKScene {
 
         // Create laces
         setupLaces()
+
+        // Create sparkle button
+        setupSparkleButton()
     }
 
     private func setupHeart(radius: CGFloat) -> [CGPoint] {
@@ -86,16 +91,12 @@ class GameScene: SKScene {
         while angle < maxAngle {
             // Create vehicles at random positions
             let v1 = Vehicle(
-                 x: CGFloat.random(in: -halfWidth...halfWidth),
-                 y: CGFloat.random(in: -halfHeight...halfHeight)
-//                x: innerHeartPoints[Int(angle / radiusIncrement)].x,
-//                y: innerHeartPoints[Int(angle / radiusIncrement)].y
+                x: innerHeartPoints[Int(angle / radiusIncrement)].x,
+                y: innerHeartPoints[Int(angle / radiusIncrement)].y
             )
             let v2 = Vehicle(
-                 x: CGFloat.random(in: -halfWidth...halfWidth),
-                 y: CGFloat.random(in: -halfHeight...halfHeight)
-//                x: outerHeartPoints[Int(angle / radiusIncrement)].x,
-//                y: outerHeartPoints[Int(angle / radiusIncrement)].y
+                x: outerHeartPoints[Int(angle / radiusIncrement)].x,
+                y: outerHeartPoints[Int(angle / radiusIncrement)].y
             )
 
             vehicles1.append(v1)
@@ -123,6 +124,37 @@ class GameScene: SKScene {
             // Add lace segment nodes to scene
             lace.addNodesToScene(self)
         }
+    }
+
+    private func setupSparkleButton() {
+        sparkleButton = SparkleButtonNode(size: CGSize(width: 40, height: 40))
+        if let button = sparkleButton {
+            button.position = CGPoint(x: self.frame.midX, y: self.frame.midY)
+            addChild(button)
+        }
+    }
+
+    private func animateMessage() {
+        let messageLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        messageLabel.text = MessageStore.getTodaysMessage()
+        messageLabel.fontSize = 24
+        messageLabel.fontColor = .white
+        messageLabel.horizontalAlignmentMode = .center
+        messageLabel.verticalAlignmentMode = .center
+
+        // Create a container node for the label and its background
+        let container = SKNode()
+        container.position = CGPoint(x: self.frame.midX, y: self.frame.minY + 50)
+        container.alpha = 0
+
+        container.addChild(messageLabel)
+
+        addChild(container)
+
+        let fadeIn = SKAction.fadeIn(withDuration: 0.5)
+        let moveUp = SKAction.moveBy(x: 0, y: 100, duration: 0.5)
+        let group = SKAction.group([fadeIn, moveUp])
+        container.run(group)
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -161,8 +193,16 @@ class GameScene: SKScene {
     // MARK: - Touch Handling
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let touch = touches.first {
-            touchLocation = touch.location(in: self)
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+
+        if let button = sparkleButton, button.contains(location) {
+            button.tapped {
+                self.animateMessage()
+            }
+            sparkleButton = nil
+        } else {
+            touchLocation = location
         }
     }
 

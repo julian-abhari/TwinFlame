@@ -69,7 +69,7 @@ class Vehicle {
         let desired = CGVector(dx: target.x - position.x, dy: target.y - position.y)
         let distance = desired.magnitude()
 
-        if distance < 100 {
+        if distance < 150 {
             let fleeDesired = desired.normalized() * maxSpeed
             var steeringForce = fleeDesired - velocity
             steeringForce = steeringForce.limited(to: maxForce)
