@@ -7,6 +7,7 @@
 
 import GameplayKit
 import SpriteKit
+import UIKit
 
 class GameScene: SKScene {
 
@@ -134,25 +135,170 @@ class GameScene: SKScene {
         }
     }
 
-    private func animateMessage() {
-        let messageLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        messageLabel.text = MessageStore.getTodaysMessage()
-        messageLabel.fontSize = 24
-        messageLabel.fontColor = .white
-        messageLabel.horizontalAlignmentMode = .center
-        messageLabel.verticalAlignmentMode = .center
+    // MARK: - Multiline text rendering to texture
 
-        // Create a container node for the label and its background
+    // Measures the size the text would occupy at a given font size and width constraint.
+    private func measureTextSize(
+        text: String,
+        fontName: String,
+        fontSize: CGFloat,
+        textColor: UIColor,
+        lineBreakMode: NSLineBreakMode,
+        alignment: NSTextAlignment,
+        constrainedToWidth width: CGFloat
+    ) -> CGSize {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = lineBreakMode
+        paragraph.alignment = alignment
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont(name: fontName, size: fontSize) ?? UIFont.boldSystemFont(ofSize: fontSize),
+            .foregroundColor: textColor,
+            .paragraphStyle: paragraph
+        ]
+
+        let maxRect = CGRect(x: 0, y: 0, width: width, height: CGFloat.greatestFiniteMagnitude)
+        let bounding = (text as NSString).boundingRect(
+            with: maxRect.size,
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: attributes,
+            context: nil
+        ).integral
+
+        return bounding.size
+    }
+
+    private func makeMultilineTextNode(
+        text: String,
+        fontName: String = "Helvetica-Bold",
+        preferredFontSize: CGFloat = 28,
+        minFontSize: CGFloat = 14,
+        maxFontSize: CGFloat = 40,
+        textColor: UIColor = .white,
+        targetSize: CGSize,
+        lineBreakMode: NSLineBreakMode = .byWordWrapping,
+        alignment: NSTextAlignment = .center,
+        scaleToFit: Bool = true
+    ) -> SKSpriteNode {
+
+        // Choose a starting font size clamped to range
+        var fontSize = max(min(preferredFontSize, maxFontSize), minFontSize)
+
+        // Adjust font size up or down to better fit height (simple iterative approach)
+        let maxIterations = 12
+        for _ in 0..<maxIterations {
+            let sizeAtFont = measureTextSize(
+                text: text,
+                fontName: fontName,
+                fontSize: fontSize,
+                textColor: textColor,
+                lineBreakMode: lineBreakMode,
+                alignment: alignment,
+                constrainedToWidth: targetSize.width
+            )
+
+            if sizeAtFont.height > targetSize.height && fontSize > minFontSize {
+                fontSize = max(minFontSize, fontSize * 0.9)
+            } else if sizeAtFont.height < targetSize.height * 0.75 && fontSize < maxFontSize {
+                fontSize = min(maxFontSize, fontSize * 1.1)
+            } else {
+                break
+            }
+        }
+
+        // Final measure at chosen font size
+        let renderedSize = measureTextSize(
+            text: text,
+            fontName: fontName,
+            fontSize: fontSize,
+            textColor: textColor,
+            lineBreakMode: lineBreakMode,
+            alignment: alignment,
+            constrainedToWidth: targetSize.width
+        )
+
+        // Render text into image
+        let scale = UIScreen.main.scale
+        let rendererFormat = UIGraphicsImageRendererFormat()
+        rendererFormat.scale = scale
+        rendererFormat.opaque = false
+
+        // Ensure at least 1pt in each dimension to avoid zero-size images
+        let drawSize = CGSize(width: max(1, renderedSize.width), height: max(1, renderedSize.height))
+        let renderer = UIGraphicsImageRenderer(size: drawSize, format: rendererFormat)
+
+        let image = renderer.image { _ in
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.lineBreakMode = lineBreakMode
+            paragraph.alignment = alignment
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont(name: fontName, size: fontSize) ?? UIFont.boldSystemFont(ofSize: fontSize),
+                .foregroundColor: textColor,
+                .paragraphStyle: paragraph
+            ]
+
+            let rect = CGRect(origin: .zero, size: drawSize)
+            (text as NSString).draw(
+                with: rect,
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: attributes,
+                context: nil
+            )
+        }
+
+        let texture = SKTexture(image: image)
+        let node = SKSpriteNode(texture: texture)
+        node.size = drawSize
+
+        if scaleToFit {
+            // Compute scale to fit within target box while preserving aspect
+            let sx = targetSize.width / drawSize.width
+            let sy = targetSize.height / drawSize.height
+            let s = min(sx, sy)
+            node.setScale(s.isFinite ? s : 1.0)
+        }
+
+        return node
+    }
+
+    private func animateMessage() {
+        let message = MessageStore.getTodaysMessage()
+
+        // Define the bounding rect for the message (centered near bottom)
+        let horizontalMargin: CGFloat = 100
+        let targetWidth = self.frame.width - 2 * horizontalMargin
+        let targetHeight: CGFloat = 140
+
+        let textNode = makeMultilineTextNode(
+            text: message,
+            fontName: "Helvetica-Bold",
+            preferredFontSize: 20,
+            minFontSize: 14,
+            maxFontSize: 24,
+            textColor: .white,
+            targetSize: CGSize(width: targetWidth, height: targetHeight),
+            lineBreakMode: .byWordWrapping,
+            alignment: .center,
+            scaleToFit: true
+        )
+
+        // Container node for animation and positioning
         let container = SKNode()
-        container.position = CGPoint(x: self.frame.midX, y: self.frame.minY + 50)
         container.alpha = 0
 
-        container.addChild(messageLabel)
+        // Position: start slightly below bottom, then move up
+        container.position = CGPoint(x: self.frame.midX, y: self.frame.maxY - 50)
 
+        // Center the textNode within the container by setting its anchor at center
+        textNode.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        textNode.position = .zero
+
+        container.addChild(textNode)
         addChild(container)
 
         let fadeIn = SKAction.fadeIn(withDuration: 0.5)
-        let moveUp = SKAction.moveBy(x: 0, y: 100, duration: 0.5)
+        let moveUp = SKAction.moveBy(x: 0, y: -100, duration: 0.5)
         let group = SKAction.group([fadeIn, moveUp])
         container.run(group)
     }
