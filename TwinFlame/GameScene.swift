@@ -11,6 +11,9 @@ import UIKit
 
 class GameScene: SKScene {
 
+    // Repository to fetch messages (injected from GameViewController; defaults to shared)
+    var repository: DailyMessagesRepository = FirebaseManager.shared
+
     // Heart shape points
     private var outerHeartPoints: [CGPoint] = []
     private var innerHeartPoints: [CGPoint] = []
@@ -262,16 +265,14 @@ class GameScene: SKScene {
         return node
     }
 
-    private func animateMessage() {
-        let message = MessageStore.getTodaysMessage()
-
+    private func animateMessage(with text: String) {
         // Define the bounding rect for the message (centered near bottom)
         let horizontalMargin: CGFloat = 100
         let targetWidth = self.frame.width - 2 * horizontalMargin
         let targetHeight: CGFloat = 140
 
         let textNode = makeMultilineTextNode(
-            text: message,
+            text: text,
             fontName: "Helvetica-Bold",
             preferredFontSize: 20,
             minFontSize: 14,
@@ -301,6 +302,27 @@ class GameScene: SKScene {
         let moveUp = SKAction.moveBy(x: 0, y: -100, duration: 0.5)
         let group = SKAction.group([fadeIn, moveUp])
         container.run(group)
+    }
+
+    // Fetch remote (or fallback) and display
+    private func loadAndShowMessage() {
+        Task {
+            // Prefer remote count to compute today's index; fall back to local
+            let (index, localText) = await MessageStore.getTodaysIndexAndLocalFallback(using: repository)
+            var text = localText
+
+            do {
+                let remote = try await repository.fetchDailyMessage(for: index)
+                text = remote.text
+            } catch {
+                // Swallow error and use local fallback
+                print("Failed to fetch remote message: \(error.localizedDescription)")
+            }
+
+            await MainActor.run {
+                self.animateMessage(with: text)
+            }
+        }
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -343,8 +365,8 @@ class GameScene: SKScene {
         let location = touch.location(in: self)
 
         if let button = sparkleButton, button.contains(location) {
-            button.tapped {
-                self.animateMessage()
+            button.tapped { [weak self] in
+                self?.loadAndShowMessage()
             }
             sparkleButton = nil
         } else {
@@ -366,3 +388,4 @@ class GameScene: SKScene {
         touchLocation = nil
     }
 }
+

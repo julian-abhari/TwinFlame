@@ -16,12 +16,19 @@ class GameViewController: UIViewController {
         
         if let view = self.view as! SKView? {
             // Load the SKScene from 'GameScene.sks'
-            if let scene = SKScene(fileNamed: "GameScene") {
-                // Set the scale mode to scale to fit the window
-                scene.scaleMode = .aspectFill
-                
-                // Present the scene
-                view.presentScene(scene)
+            if let loaded = SKScene(fileNamed: "GameScene") {
+                // Try to cast to GameScene to inject repository
+                if let scene = loaded as? GameScene {
+                    scene.scaleMode = .aspectFill
+                    scene.repository = FirebaseManager.shared
+                    view.presentScene(scene)
+                } else {
+                    // Fallback: instantiate GameScene programmatically if .sks custom class isn't set
+                    let scene = GameScene(size: view.bounds.size)
+                    scene.scaleMode = .aspectFill
+                    scene.repository = FirebaseManager.shared
+                    view.presentScene(scene)
+                }
             }
             
             view.ignoresSiblingOrder = true

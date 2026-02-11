@@ -8,17 +8,10 @@
 import Foundation
 
 struct MessageStore {
+    // Local fallback messages; still used as seed/fallback text.
     static let messages: [String] = [
-        "I love the way you smile when I tell a joke so bad it's good.",
-        "Every night when it's dark, I'll look up into the stars and think of you.",
-        "The way your eyes light up when you look at me makes my heart melt.",
-        "You have cutest and most bubbliest laugh.",
-        "Your voice conveys so much care and sweetness when you reassure me.",
-        "I love when I can really make you laugh so sincerely.",
-        "I love when I randomly wake up to you watching me sleep",
-        "Despite any fears you may have, I love how you always trust me in every adventure.",
-        "I love how supportive you are when you remind me to be I'm proud of myself.",
-        "You always encourage me to follow my passions, and that is one of the best gifts I could ever receive.",
+        "Goog",
+        "Goog",
     ]
 
     static let startDate: Date = {
@@ -29,10 +22,23 @@ struct MessageStore {
         return Calendar.current.date(from: dateComponents) ?? Date()
     }()
 
-    static func getTodaysMessage() -> String {
-        if messages.isEmpty {
-            return "TwinFlame"
+    // Prefer remote count; fallback to local messages.count
+    static func preferredMessagesCount(using repository: DailyMessagesRepository) async -> Int {
+        do {
+            let remoteCount = try await repository.dailyMessagesCount()
+            if remoteCount > 0 {
+                return remoteCount
+            }
+        } catch {
+            // swallow and fall back
         }
+        return messages.count
+    }
+
+    // Expose today's index as a single source of truth, preferring remote count
+    static func messageIndexForToday(using repository: DailyMessagesRepository) async -> Int {
+        let count = await preferredMessagesCount(using: repository)
+        guard count > 0 else { return 0 }
 
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -42,10 +48,41 @@ struct MessageStore {
         let dayDifference = components.day ?? 0
 
         if dayDifference < 0 {
-            return messages.first!
+            return 0
         }
 
-        let messageIndex = dayDifference % messages.count
-        return messages[messageIndex]
+        return dayDifference % count
+    }
+
+    // Synchronous fallback index (uses local messages only)
+    static func messageIndexForTodayLocalOnly() -> Int {
+        guard !messages.isEmpty else { return 0 }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let start = calendar.startOfDay(for: startDate)
+
+        let components = calendar.dateComponents([.day], from: start, to: today)
+        let dayDifference = components.day ?? 0
+
+        if dayDifference < 0 {
+            return 0
+        }
+
+        return dayDifference % messages.count
+    }
+
+    // Return the local message for a specific index (safe with fallback)
+    static func messageForIndex(_ index: Int) -> String {
+        guard !messages.isEmpty else { return "TwinFlame" }
+        let safeIndex = ((index % messages.count) + messages.count) % messages.count
+        return messages[safeIndex]
+    }
+
+    // Async helper to get today's index and message, preferring remote count
+    static func getTodaysIndexAndLocalFallback(using repository: DailyMessagesRepository) async -> (index: Int, localText: String) {
+        let index = await messageIndexForToday(using: repository)
+        return (index, messageForIndex(index))
     }
 }
+
