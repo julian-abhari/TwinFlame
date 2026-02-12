@@ -175,7 +175,7 @@ class GameScene: SKScene {
         text: String,
         fontName: String = "Helvetica-Bold",
         preferredFontSize: CGFloat = 28,
-        minFontSize: CGFloat = 14,
+        minFontSize: CGFloat = 18,
         maxFontSize: CGFloat = 40,
         textColor: UIColor = .white,
         targetSize: CGSize,
@@ -269,14 +269,14 @@ class GameScene: SKScene {
         // Define the bounding rect for the message (centered near bottom)
         let horizontalMargin: CGFloat = 100
         let targetWidth = self.frame.width - 2 * horizontalMargin
-        let targetHeight: CGFloat = 140
+        let targetHeight: CGFloat = 250
 
         let textNode = makeMultilineTextNode(
             text: text,
             fontName: "Helvetica-Bold",
             preferredFontSize: 20,
-            minFontSize: 14,
-            maxFontSize: 24,
+            minFontSize: 18,
+            maxFontSize: 32,
             textColor: .white,
             targetSize: CGSize(width: targetWidth, height: targetHeight),
             lineBreakMode: .byWordWrapping,

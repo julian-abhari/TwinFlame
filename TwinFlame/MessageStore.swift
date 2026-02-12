@@ -10,15 +10,34 @@ import Foundation
 struct MessageStore {
     // Local fallback messages; still used as seed/fallback text.
     static let messages: [String] = [
-        "Goog",
-        "Goog",
+        "I love the way you smile when I tell a joke so bad it's good.",
+        "Every night when it's dark, I'll look up into the stars and think of you.",
+        "The way your eyes light up when you look at me makes my heart melt.",
+        "You have cutest and most bubbliest laugh.",
+        "Your voice conveys so much care and sweetness when you reassure me.",
+        "I love when I can really make you laugh so sincerely.",
+        "I love when I randomly wake up to you watching me sleep",
+        "Despite any fears you may have, I love how you always trust me in every adventure.",
+        "I love how supportive you are when you remind me to be I'm proud of myself.",
+        "You always encourage me to follow my passions, and that is one of the best gifts I could ever receive.",
+        "Your kindness lets you see the best in everyone which brightens us all",
+        "I love how you always make me feel safe and loved, no matter what.",
+        "I've always felt us drawn to each other, starting when we hiked in Arkansas.",
+        "Heaven is playing Zelda Windwaker together after ordering old school bagels.",
+        "I've felt no worse pain than when I lost you, and something I loved was always out of reach.",
+        "Life was magic when we started dating: Hot cocoa, snow dinos, playing yoshi.",
+        "Remember when we cuddled on the McFarlin field as we started to freeze?",
+        "I can't believe you ever thought you weren't smart enough, just look how far you've come.",
+        "I love how adventurous and curious you've become.",
+        "All the memories of when you were a HOST and then a peer-mentor always showed me that you are one of the bravest people I know.",
+        "Remember when we checked into our first airbnb in hotsprings and spent three wonderful days exploring the trails and city?",
     ]
 
     static let startDate: Date = {
         var dateComponents = DateComponents()
         dateComponents.year = 2026
         dateComponents.month = 2
-        dateComponents.day = 8
+        dateComponents.day = 1
         return Calendar.current.date(from: dateComponents) ?? Date()
     }()
 

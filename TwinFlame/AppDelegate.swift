@@ -17,6 +17,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         FirebaseApp.configure()
+
+        // Play launch track once per app run.
+        AudioLaunchPlayer.shared.playLaunchTrackIfNeeded()
+
         // One-time seeding of DailyMessages from local
 //        Task {
 //            do {
@@ -48,4 +52,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 }
-
