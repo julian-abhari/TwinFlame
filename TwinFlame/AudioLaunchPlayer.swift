@@ -49,7 +49,7 @@ final class AudioLaunchPlayer: NSObject {
 
     static func selectLaunchTrackName(for date: Date, calendar: Calendar = .current) -> String {
         let day = calendar.component(.day, from: date)
-        return day == 24 ? "Martian Dreams" : "Mars"
+        return day == 24 ? "Mars" : "Martian Dreams"
     }
 
     // MARK: - Helpers

@@ -37,7 +37,7 @@ struct MessageStore {
         var dateComponents = DateComponents()
         dateComponents.year = 2026
         dateComponents.month = 2
-        dateComponents.day = 1
+        dateComponents.day = 13
         return Calendar.current.date(from: dateComponents) ?? Date()
     }()
 

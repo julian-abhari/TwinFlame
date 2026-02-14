@@ -137,6 +137,39 @@ class GameScene: SKScene {
             addChild(button)
         }
     }
+    
+    override func update(_ currentTime: TimeInterval) {
+        // Update time
+        time += timeIncrement
+
+        // Combine all vehicles for separation behavior
+        let allVehicles = vehicles1 + vehicles2
+
+        for i in 0..<vehicles1.count {
+            // Determine target based on time (alternating between inner and outer heart)
+            let useOuter = Int(time) % 2 == 0
+            let target1 = useOuter ? outerHeartPoints[i] : innerHeartPoints[i]
+            let target2 = useOuter ? innerHeartPoints[i] : outerHeartPoints[i]
+
+            // Update vehicle 1
+            vehicles1[i].applyBehaviors(vehicles: allVehicles, target: target1)
+            if let touch = touchLocation {
+                vehicles1[i].applyAvoidTarget(touch)
+            }
+            vehicles1[i].update()
+
+            // Update vehicle 2
+            vehicles2[i].applyBehaviors(vehicles: allVehicles, target: target2)
+            if let touch = touchLocation {
+                vehicles2[i].applyAvoidTarget(touch)
+            }
+            vehicles2[i].update()
+
+            // Update lace position and display
+            laceNet[i].position = vehicles2[i].position
+            laceNet[i].show(target: vehicles1[i].position)
+        }
+    }
 
     // MARK: - Multiline text rendering to texture
 
@@ -322,39 +355,6 @@ class GameScene: SKScene {
             await MainActor.run {
                 self.animateMessage(with: text)
             }
-        }
-    }
-
-    override func update(_ currentTime: TimeInterval) {
-        // Update time
-        time += timeIncrement
-
-        // Combine all vehicles for separation behavior
-        let allVehicles = vehicles1 + vehicles2
-
-        for i in 0..<vehicles1.count {
-            // Determine target based on time (alternating between inner and outer heart)
-            let useOuter = Int(time) % 2 == 0
-            let target1 = useOuter ? outerHeartPoints[i] : innerHeartPoints[i]
-            let target2 = useOuter ? innerHeartPoints[i] : outerHeartPoints[i]
-
-            // Update vehicle 1
-            vehicles1[i].applyBehaviors(vehicles: allVehicles, target: target1)
-            if let touch = touchLocation {
-                vehicles1[i].applyAvoidTarget(touch)
-            }
-            vehicles1[i].update()
-
-            // Update vehicle 2
-            vehicles2[i].applyBehaviors(vehicles: allVehicles, target: target2)
-            if let touch = touchLocation {
-                vehicles2[i].applyAvoidTarget(touch)
-            }
-            vehicles2[i].update()
-
-            // Update lace position and display
-            laceNet[i].position = vehicles2[i].position
-            laceNet[i].show(target: vehicles1[i].position)
         }
     }
 

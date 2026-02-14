@@ -7,6 +7,7 @@
 
 import UIKit
 import FirebaseCore
+import UserNotifications
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -21,7 +22,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Play launch track once per app run.
         AudioLaunchPlayer.shared.playLaunchTrackIfNeeded()
 
-        // One-time seeding of DailyMessages from local
+        // Set UNUserNotificationCenter delegate to show alerts while app is foregrounded.
+        UNUserNotificationCenter.current().delegate = self
+
+        // Configure and schedule daily reminders (defaults to 12:12 local).
+        Task {
+            await DailyReminderScheduler.shared.configureAndScheduleDailyReminders()
+
+            // TEST ONLY: Schedule a notification one minute from launch.
+            // After you verify it arrives, keep this commented out.
+            // await DailyReminderScheduler.shared.scheduleOneMinuteTestNotification()
+
+            // DEBUG: print all scheduled notifications (including ours).
+            // await DailyReminderScheduler.shared.debugPrintScheduledNotifications()
+        }
+
+        // DEBUG: One-time seeding of DailyMessages from local
 //        Task {
 //            do {
 //                try await FirebaseManager.shared.seedDailyMessagesFromLocal()
@@ -39,7 +55,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
+        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application's current state in case it is terminated later.
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
@@ -51,4 +67,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    // Present notifications as alerts/sounds while app is in foreground.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        if #available(iOS 14.0, *) {
+            return [.banner, .list, .sound]
+        } else {
+            return [.alert, .sound]
+        }
+    }
+
+    // Handle taps if needed (navigate into app, etc.)
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse) async {
+        // You can inspect response.notification.request.identifier to route if needed.
+    }
 }
